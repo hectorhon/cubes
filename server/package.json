@@ -1,0 +1,17 @@
+{
+  "name": "server",
+  "version": "0.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "mocha --recursive"
+  },
+  "author": "hectorhon",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "mocha": "^8.1.0",
+    "should": "^13.2.3",
+    "typescript": "^3.9.7",
+    "typescript-language-server": "^0.4.0"
+  }
+}
