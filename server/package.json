@@ -4,15 +4,12 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "mocha --recursive"
+    "test": "jest --watch --verbose"
   },
   "author": "hectorhon",
   "license": "UNLICENSED",
   "devDependencies": {
-    "mocha": "^8.1.0",
-    "should": "^13.2.3",
-    "should-sinon": "0.0.6",
-    "sinon": "^9.0.2",
+    "jest": "^26.2.2",
     "typescript": "^3.9.7",
     "typescript-language-server": "^0.4.0"
   },

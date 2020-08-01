@@ -1,6 +1,3 @@
-require('should')
-const sinon = require('sinon')
-require('should-sinon')
 const uuid = require('uuid')
 
 const Game = require('../../src/games/memory')
@@ -10,19 +7,19 @@ describe('Memory game', () => {
     let game
     const numPairs = 5
 
-    before(() => {
+    beforeAll(() => {
       game = new Game(numPairs)
     })
 
-    it('assign an id', () => {
-      (!!game.id).should.be.true()
+    test('assign an id', () => {
+      expect(game.id).toBeTruthy()
     })
 
-    it('should create correct number of cards', () => {
-      game.cards.should.have.length(numPairs * 2)
+    test('should create correct number of cards', () => {
+      expect(game.cards).toHaveLength(numPairs * 2)
     })
 
-    it('should create correct pairs of cards', () => {
+    test('should create correct pairs of cards', () => {
       const valuesCount = {}
       game.cards.forEach(card => {
         if (!valuesCount[card.value]) {
@@ -31,34 +28,36 @@ describe('Memory game', () => {
           valuesCount[card.value] += 1
         }
       })
-      Object.keys(valuesCount).should.have.length(numPairs)
+      expect(Object.keys(valuesCount)).toHaveLength(numPairs)
       for (let value in valuesCount) {
-        valuesCount[value].should.equal(2)
+        expect(valuesCount[value]).toBe(2)
       }
     })
 
-    it('should shuffle the cards')
+    test.todo('should shuffle the cards')
   })
 
   describe('add player', () => {
     let game, emit, playerId
     const clientId = uuid.v4()
 
-    before(() => {
+    beforeAll(() => {
       const numPairs = 5
       game = new Game(numPairs)
-      emit = sinon.spy(game, 'emit')
+      emit = jest.spyOn(game, 'emit')
       playerId = game.addPlayer(clientId)
     })
 
-    it('should add the player', () => {
-      game.players.map(player => player.id).should.containEql(playerId)
+    test('should add the player', () => {
+      expect(game.players.map(player => player.id)).toContain(playerId)
     })
 
-    it('should emit playerJoined event', () => {
-      emit.should.be.calledWith('playerJoined')
-      emit.lastCall.args[1].should.have.property('clientId', clientId)
-      emit.lastCall.args[1].should.have.property('playerId')
+    test('should emit playerJoined event', () => {
+      expect(emit).toBeCalledTimes(1)
+      const lastArgs = emit.mock.calls[emit.mock.calls.length - 1]
+      expect(lastArgs[0]).toBe('playerJoined')
+      expect(lastArgs[1]).toHaveProperty('clientId', clientId)
+      expect(lastArgs[1]).toHaveProperty('playerId')
     })
   })
 
@@ -68,7 +67,7 @@ describe('Memory game', () => {
     beforeEach(() => {
       const numPairs = 5
       game = new Game(numPairs)
-      emit = sinon.spy(game, 'emit')
+      emit = jest.spyOn(game, 'emit')
       const clientId1 = uuid.v4()
       const clientId2 = uuid.v4()
       playerId1 = game.addPlayer(clientId1)
@@ -80,59 +79,62 @@ describe('Memory game', () => {
         game.clickCard(playerId1, game.cards[0].id)
       })
 
-      it('should select the card', () => {
-        game.cards[0].should.have.property('selectedBy', playerId1)
-        game.players.find(player => player.id === playerId1).selectedCards
-          .should.containEql(game.cards[0].id)
+      test('should select the card', () => {
+        expect(game.cards[0]).toHaveProperty('selectedBy', playerId1)
+        expect(game.players.find(player => player.id === playerId1).selectedCards)
+          .toContain(game.cards[0].id)
       })
 
-      it('should emit playerSelectedCard event', () => {
-        emit.should.be.calledWith('playerSelectedCard')
-        emit.lastCall.args[1].should.have.property('playerId', playerId1)
-        emit.lastCall.args[1].should.have.property('cardId', game.cards[0].id)
-        emit.lastCall.args[1].should.have.property('cardValue', game.cards[0].value)
+      test('should emit playerSelectedCard event', () => {
+        expect(emit).toBeCalledWith('playerSelectedCard', {
+          playerId: playerId1,
+          cardId: game.cards[0].id,
+          cardValue: game.cards[0].value,
+        })
       })
     })
 
     describe('card is selected by self', () => {
       beforeEach(() => {
         game.clickCard(playerId1, game.cards[0].id)
-        emit.resetHistory()
+        emit.mockClear()
         game.clickCard(playerId1, game.cards[0].id)
       })
 
-      it('should deselect the card', () => {
-        (!!game.cards[0].selectedBy).should.be.false()
-        game.players.find(player => player.id === playerId1).selectedCards
-          .should.not.containEql(game.cards[0].id)
+      test('should deselect the card', () => {
+        expect(game.cards[0].selectedBy).toBeFalsy()
+        expect(game.players.find(player => player.id === playerId1).selectedCards)
+          .not.toContain(game.cards[0].id)
       })
 
-      it('should emit playerDeselectedCard event', () => {
-        emit.should.be.calledWith('playerDeselectedCard')
-        emit.lastCall.args[1].should.have.property('playerId', playerId1)
-        emit.lastCall.args[1].should.have.property('cardId', game.cards[0].id)
+      test('should emit playerDeselectedCard event', () => {
+        expect(emit).toBeCalledWith('playerDeselectedCard', {
+          playerId: playerId1,
+          cardId: game.cards[0].id,
+        })
       })
     })
 
     describe('card is selected by someone else', () => {
       beforeEach(() => {
         game.clickCard(playerId1, game.cards[0].id)
-        emit.resetHistory()
+        emit.mockClear()
         game.clickCard(playerId2, game.cards[0].id)
       })
 
-      it('should fail to select the card', () => {
-        game.cards[0].should.have.property('selectedBy', playerId1)
-        game.players.find(player => player.id === playerId1).selectedCards
-          .should.containEql(game.cards[0].id)
-        game.players.find(player => player.id === playerId2).selectedCards
-          .should.not.containEql(game.cards[0].id)
+      test('should fail to select the card', () => {
+        expect(game.cards[0]).toHaveProperty('selectedBy', playerId1)
+        expect(game.players.find(player => player.id === playerId1).selectedCards)
+          .toContain(game.cards[0].id)
+        expect(game.players.find(player => player.id === playerId2).selectedCards)
+          .not.toContain(game.cards[0].id)
       })
 
-      it('should emit playerSelectCardFailed event', () => {
-        emit.should.be.calledWith('playerSelectCardFailed')
-        emit.lastCall.args[1].should.have.property('playerId', playerId2)
-        emit.lastCall.args[1].should.have.property('cardId', game.cards[0].id)
+      test('should emit playerSelectCardFailed event', () => {
+        expect(emit).toBeCalledWith('playerSelectCardFailed', {
+          playerId: playerId2,
+          cardId: game.cards[0].id,
+        })
       })
     })
 
@@ -155,25 +157,26 @@ describe('Memory game', () => {
         game.clickCard(playerId2, pair[0].id)
       })
 
-      it('should fail to select the card', () => {
-        pair[0].should.not.have.property('selectedBy', playerId2)
-        game.players.find(player => player.id === playerId2).selectedCards
-          .should.not.containEql(game.cards[0].id)
+      test('should fail to select the card', () => {
+        expect(pair[0]).not.toHaveProperty('selectedBy', playerId2)
+        expect(game.players.find(player => player.id === playerId2).selectedCards)
+          .not.toContain(game.cards[0].id)
       })
 
-      it('should emit playerSelectCardFailed event', () => {
-        emit.should.be.calledWith('playerSelectCardFailed')
-        emit.lastCall.args[1].should.have.property('playerId', playerId2)
-        emit.lastCall.args[1].should.have.property('cardId', game.cards[0].id)
+      test('should emit playerSelectCardFailed event', () => {
+        expect(emit).toBeCalledWith('playerSelectCardFailed', {
+          playerId: playerId2,
+          cardId: game.cards[0].id,
+        })
       })
     })
 
-    it('should trigger checking for matches after every click', () => {
-      const checkForMatches = sinon.spy(game, 'checkForMatches')
+    test('should trigger checking for matches after every click', () => {
+      const checkForMatches = jest.spyOn(game, 'checkForMatches')
       game.clickCard(playerId1, game.cards[0].id)
       game.clickCard(playerId2, game.cards[0].id)
-      checkForMatches.firstCall.args[0].should.equal(playerId1)
-      checkForMatches.secondCall.args[0].should.equal(playerId2)
+      expect(checkForMatches.mock.calls[0][0]).toBe(playerId1)
+      expect(checkForMatches.mock.calls[1][0]).toBe(playerId2)
     })
   })
 
@@ -183,7 +186,7 @@ describe('Memory game', () => {
     beforeEach(() => {
       const numPairs = 5
       game = new Game(numPairs)
-      emit = sinon.spy(game, 'emit')
+      emit = jest.spyOn(game, 'emit')
       const clientId = uuid.v4()
       playerId = game.addPlayer(clientId)
 
@@ -199,10 +202,10 @@ describe('Memory game', () => {
       pair = game.cards.filter(card => card.value === parseInt(aMatchingValue))
     })
 
-    it('should not clear player selection when only one card selected', () => {
+    test('should not clear player selection when only one card selected', () => {
       game.clickCard(playerId, pair[0].id)
-      game.players.find(player => player.id === playerId)
-        .selectedCards.should.have.length(1)
+      expect(game.players.find(player => player.id === playerId).selectedCards)
+        .toHaveLength(1)
     })
 
     describe('match is present', () => {
@@ -211,23 +214,24 @@ describe('Memory game', () => {
         game.clickCard(playerId, pair[1].id)
       })
 
-      it('should mark the cards as matched', () => {
+      test('should mark the cards as matched', () => {
         const matchedCardIds = game.cards
           .filter(card => card.isMatched)
           .map(card => card.id)
-        matchedCardIds.should.containDeep([pair[0].id, pair[1].id])
+        expect(matchedCardIds).toEqual([pair[0].id, pair[1].id])
       })
 
-      it('should emit matchFound event', () => {
-        emit.should.be.calledWith('matchFound')
-        emit.lastCall.args[1].should.have.property('playerId', playerId)
-        emit.lastCall.args[1].cardIds.should.deepEqual([pair[0].id, pair[1].id])
-        emit.lastCall.args[1].should.have.property('cardValue', pair[0].value)
+      test('should emit matchFound event', () => {
+        expect(emit).toBeCalledWith('matchFound', {
+          playerId,
+          cardIds: [pair[0].id, pair[1].id],
+          cardValue: pair[0].value,
+        })
       })
 
-      it('should clear selection of the current player', () => {
-        game.players.find(player => player.id === playerId).selectedCards
-          .should.have.length(0)
+      test('should clear selection of the current player', () => {
+        expect(game.players.find(player => player.id === playerId).selectedCards)
+          .toHaveLength(0)
       })
     })
 
@@ -240,15 +244,16 @@ describe('Memory game', () => {
         game.clickCard(playerId, otherCard.id)
       })
 
-      it('should emit matchFailed event', () => {
-        emit.should.be.calledWith('matchFailed')
-        emit.lastCall.args[1].should.have.property('playerId', playerId)
-        emit.lastCall.args[1].cardIds.should.deepEqual([pair[0].id, otherCard.id])
+      test('should emit matchFailed event', () => {
+        expect(emit).toBeCalledWith('matchFailed', {
+          playerId,
+          cardIds: [pair[0].id, otherCard.id],
+        })
       })
 
-      it('should clear selection of the current player', () => {
-        game.players.find(player => player.id === playerId).selectedCards
-          .should.have.length(0)
+      test('should clear selection of the current player', () => {
+        expect(game.players.find(player => player.id === playerId).selectedCards)
+          .toHaveLength(0)
       })
     })
   })
