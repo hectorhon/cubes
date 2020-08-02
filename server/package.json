@@ -4,6 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "start": "node src/app.js",
     "test": "jest --watch --verbose"
   },
   "author": "hectorhon",
@@ -14,6 +15,7 @@
     "typescript-language-server": "^0.4.0"
   },
   "dependencies": {
+    "koa": "^2.13.0",
     "uuid": "^8.3.0"
   }
 }
