@@ -1,25 +1,58 @@
-import React from 'react';
-import './App.css';
+import React from 'react'
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link,
+} from 'react-router-dom'
+
+import './App.css'
+import GamesPage from './pages/games'
+import MemoryGamePage from './pages/games/memory'
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    <Router>
+      <div>
+        <nav>
+          <ul>
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li>
+              <Link to="/games">Games</Link>
+            </li>
+          </ul>
+        </nav>
+        <Switch>
+          <Route exact path="/">
+            <Home />
+          </Route>
+          <Route exact path="/games">
+            <GamesPage />
+          </Route>
+          <Route exact path="/games/memory">
+            <MemoryGamePage />
+          </Route>
+          <Route path="*">
+            <NotFound />
+          </Route>
+        </Switch>
+      </div>
+    </Router>
+  )
 }
 
-export default App;
+function Home() {
+  return (
+    <h1>Welcome</h1>
+  )
+}
+
+function NotFound() {
+  return (
+    <p>Not found</p>
+  )
+}
+
+export default App
