@@ -1,7 +1,7 @@
 import React from 'react'
 import { useForm } from "react-hook-form"
 
-function Registration(props) {
+function RegistrationForm(props) {
   const { onSubmit: submit } = props
   const { register, watch, handleSubmit, errors, getValues, trigger } = useForm()
   const watchMode = watch('mode')
@@ -92,4 +92,4 @@ function Registration(props) {
   )
 }
 
-export default Registration
+export default RegistrationForm

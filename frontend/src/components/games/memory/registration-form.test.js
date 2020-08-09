@@ -2,7 +2,7 @@ import React from 'react'
 import { render, fireEvent, act } from '@testing-library/react'
 import uuid from 'uuid'
 
-import Registration from './registration'
+import RegistrationForm from './registration-form'
 
 describe('form submit', () => {
   let mockOnSubmit, getByLabelText, getByText, getByPlaceholderText, queryByText
@@ -10,7 +10,7 @@ describe('form submit', () => {
   beforeEach(() => {
     mockOnSubmit = jest.fn()
     const component = render(
-      <Registration onSubmit={mockOnSubmit}/>
+      <RegistrationForm onSubmit={mockOnSubmit}/>
     )
     getByLabelText = component.getByLabelText
     getByText = component.getByText
