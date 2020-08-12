@@ -61,6 +61,93 @@ describe('Memory game', () => {
     })
   })
 
+  describe('get state for player', () => {
+    let game, playerId1, playerId2, state1, state2, card1a, card1b, card2, card3
+    const clientId1 = uuid.v4()
+    const clientId2 = uuid.v4()
+
+    beforeAll(() => {
+      const numPairs = 5
+      game = new Game(numPairs)
+      playerId1 = game.addPlayer(clientId1)
+      playerId2 = game.addPlayer(clientId2)
+      card1a = game.cards[0]
+      card1b = game.cards.slice(1).find(card => card.value === game.cards[0].value)
+      card2 = game.cards.find(card => card.value != card1a.value)
+      card3 = game.cards.find(
+        card => card.value != card1a.value && card.value != card2.value)
+      game.clickCard(playerId1, card1a.id)
+      game.clickCard(playerId1, card1b.id)
+      game.clickCard(playerId2, card2.id)
+      state1 = game.getStateForPlayer(playerId1)
+      state2 = game.getStateForPlayer(playerId2)
+    })
+
+    describe('players', () => {
+      it('should return all player ids', () => {
+        expect(state1).toHaveProperty('players', [
+          { id: playerId1 },
+          { id: playerId2 },
+        ])
+        expect(state2).toHaveProperty('players', [
+          { id: playerId1 },
+          { id: playerId2 },
+        ])
+      })
+    })
+
+    describe('cards', () => {
+      it('should return list of cards', () => {
+        expect(state1).toHaveProperty('cards')
+        expect(state2).toHaveProperty('cards')
+      })
+
+      it('should return values for player selected', () => {
+        expect(state2.cards).toContainEqual({
+          id: card2.id,
+          value: card2.value,
+        })
+      })
+
+      it('should not return values for non player selected', () => {
+        expect(state1.cards.find(card => card.id === card2.id))
+          .not.toHaveProperty('value')
+      })
+
+      it('should return values for matched', () => {
+        expect(state1.cards).toContainEqual({
+          id: card1a.id,
+          value: card1a.value,
+          isMatched: true,
+        })
+        expect(state1.cards).toContainEqual({
+          id: card1b.id,
+          value: card1b.value,
+          isMatched: true,
+        })
+        expect(state2.cards).toContainEqual({
+          id: card1a.id,
+          value: card1a.value,
+          isMatched: true,
+        })
+        expect(state2.cards).toContainEqual({
+          id: card1b.id,
+          value: card1b.value,
+          isMatched: true,
+        })
+      })
+
+      it('should not return values for not matched', () => {
+        expect(state1.cards).toContainEqual({
+          id: card2.id,
+        })
+        expect(state2.cards).toContainEqual({
+          id: card3.id,
+        })
+      })
+    })
+  })
+
   describe('click card', () => {
     let game, emit, playerId1, playerId2
 

@@ -13,7 +13,8 @@ class Player {
 class Card {
   id
   value
-  selectedBy
+  selectedBy  // Value is a playerId. Can only one player at a time
+  isMatched
 
   constructor(value) {
     this.id = uuid.v4()
@@ -46,6 +47,32 @@ class Game extends EventEmitter {
       playerId: player.id,
     })
     return player.id
+  }
+
+  getStateForPlayer(playerId) {
+    return {
+      players: this.players.map(player => ({
+        id: player.id,
+      })),
+      cards: this.cards.map(card => {
+        if (card.isMatched) {
+          return {
+            id: card.id,
+            value: card.value,
+            isMatched: card.isMatched,
+          }
+        } else if (card.selectedBy === playerId) {
+          return {
+            id: card.id,
+            value: card.value,
+          }
+        } else {
+          return {
+            id: card.id,
+          }
+        }
+      })
+    }
   }
 
   clickCard(playerId, cardId) {
