@@ -1,5 +1,7 @@
 const Game = require('../../games/memory')
 
+const logger = require('../../logger').child({ module: 'games/memory' })
+
 const games = []
 
 function createGame(numPairs) {
@@ -24,19 +26,38 @@ function savePlayerIdForClientId(clientId, playerId) {
 
 // clientId is secret, do not share with other clients
 function setupClient(clientId, socket, gameId) {
+  logger.info({ clientId, socketId: socket.id, gameId }, 'Setting up memory game client')
+
   const game = games.find(game => game.id === gameId)
   if (!game) {
+    logger.info({ gameId }, 'Invalid gameId, closing socket')
     socket.close()
     return
   }
 
+  socket.on('cardClick', cardId => {
+    logger.info({ clientId, playerId, gameId, cardId }, 'Card click event')
+    const thisPlayerId = getPlayerIdForClient(clientId)
+    game.clickCard(thisPlayerId, cardId)
+  })
+
+  function socketEmit(eventName, ...args) {
+    logger.trace({
+      socketId: socket.id,
+      eventName, args: [...args],
+    }, 'Socket emit event')
+    socket.emit(eventName, ...args)
+  }
+
   game.on('playerJoined', ({ clientId: clientId_, playerId }) => {
     if (clientId_ === clientId) {
-      socket.emit('selfJoined', {
-        playerId
+      const gameState = game.getStateForPlayer(playerId)
+      socketEmit('selfJoined', {
+        playerId,
+        gameState,
       })
     } else {
-      socket.emit('playerJoined', {
+      socketEmit('playerJoined', {
         playerId,
       })
     }
@@ -45,12 +66,12 @@ function setupClient(clientId, socket, gameId) {
   game.on('playerSelectedCard', ({ playerId, cardId, cardValue }) => {
     const thisPlayerId = getPlayerIdForClient(clientId)
     if (playerId === thisPlayerId) {
-      socket.emit('selfSelectedCard', {
+      socketEmit('selfSelectedCard', {
         cardId,
         cardValue,
       })
     } else {
-      socket.emit('playerSelectedCard', {
+      socketEmit('playerSelectedCard', {
         playerId,
         cardId,
       })
@@ -60,11 +81,11 @@ function setupClient(clientId, socket, gameId) {
   game.on('playerDeselectedCard', ({ playerId, cardId }) => {
     const thisPlayerId = getPlayerIdForClient(clientId)
     if (playerId === thisPlayerId) {
-      socket.emit('selfDeselectedCard', {
+      socketEmit('selfDeselectedCard', {
         cardId,
       })
     } else {
-      socket.emit('playerDeselectedCard', {
+      socketEmit('playerDeselectedCard', {
         playerId,
         cardId,
       })
@@ -74,11 +95,11 @@ function setupClient(clientId, socket, gameId) {
   game.on('playerSelectCardFailed', ({ playerId, cardId }) => {
     const thisPlayerId = getPlayerIdForClient(clientId)
     if (playerId === thisPlayerId) {
-      socket.emit('selfSelectCardFailed', {
+      socketEmit('selfSelectCardFailed', {
         cardId,
       })
     } else {
-      socket.emit('playerSelectCardFailed', {
+      socketEmit('playerSelectCardFailed', {
         playerId,
         cardId,
       })
@@ -88,12 +109,12 @@ function setupClient(clientId, socket, gameId) {
   game.on('matchFound', ({ playerId, cardIds, cardValue }) => {
     const thisPlayerId = getPlayerIdForClient(clientId)
     if (playerId === thisPlayerId) {
-      socket.emit('selfMatchFound', {
+      socketEmit('selfMatchFound', {
         cardIds,
         cardValue,
       })
     } else {
-      socket.emit('matchFound', {
+      socketEmit('matchFound', {
         playerId,
         cardIds,
         cardValue,
@@ -101,19 +122,32 @@ function setupClient(clientId, socket, gameId) {
     }
   })
 
-
   game.on('matchFailed', ({ playerId, cardIds }) => {
     const thisPlayerId = getPlayerIdForClient(clientId)
     if (playerId === thisPlayerId) {
-      socket.emit('selfMatchFailed', {
+      socketEmit('selfMatchFailed', {
         cardIds,
       })
     } else {
-      socket.emit('matchFailed', {
+      socketEmit('matchFailed', {
         playerId,
         cardIds,
       })
     }
+  })
+
+  game.on('selectionClearedAfterMatchFound', ({ playerId, cardIds }) => {
+    socketEmit('selectionClearedAfterMatchFound', {
+      playerId,
+      cardIds,
+    })
+  })
+
+  game.on('selectionClearedAfterMatchFailed', ({ playerId, cardIds }) => {
+    socketEmit('selectionClearedAfterMatchFailed', {
+      playerId,
+      cardIds,
+    })
   })
 
   const playerId = game.addPlayer(clientId)

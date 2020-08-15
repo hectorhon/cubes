@@ -1,0 +1,7 @@
+{
+  "colorize": false,
+  "levelFirst": true,
+  "translateTime": true,
+  "messageFormat": "[{module}] - {msg}",
+  "ignore": "module"
+}

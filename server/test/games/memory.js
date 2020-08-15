@@ -3,6 +3,14 @@ const uuid = require('uuid')
 const Game = require('../../src/games/memory')
 
 describe('Memory game', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.clearAllTimers()
+  })
+
   describe('constructor', () => {
     let game
     const numPairs = 5
@@ -245,7 +253,7 @@ describe('Memory game', () => {
       })
 
       test('should fail to select the card', () => {
-        expect(pair[0]).not.toHaveProperty('selectedBy', playerId2)
+        expect(pair[0].selectedBy).not.toEqual(playerId2)
         expect(game.players.find(player => player.id === playerId2).selectedCards)
           .not.toContain(game.cards[0].id)
       })
@@ -291,8 +299,7 @@ describe('Memory game', () => {
 
     test('should not clear player selection when only one card selected', () => {
       game.clickCard(playerId, pair[0].id)
-      expect(game.players.find(player => player.id === playerId).selectedCards)
-        .toHaveLength(1)
+      expect(game.players.find(player => player.id === playerId).selectedCards).toHaveLength(1)
     })
 
     describe('match is present', () => {
@@ -316,9 +323,27 @@ describe('Memory game', () => {
         })
       })
 
-      test('should clear selection of the current player', () => {
-        expect(game.players.find(player => player.id === playerId).selectedCards)
-          .toHaveLength(0)
+      test('should emit selectionClearedAfterMatchFound event after a delay', () => {
+        expect(emit).not.toBeCalledWith('selectionClearedAfterMatchFound', expect.anything())
+
+        jest.runAllTimers()
+
+        expect(emit).toBeCalledWith('selectionClearedAfterMatchFound', {
+          playerId,
+          cardIds: [pair[0].id, pair[1].id],
+        })
+      })
+
+      test('should clear selection of the current player after a delay', () => {
+        expect(game.players.find(player => player.id === playerId).selectedCards).toHaveLength(2)
+        expect(pair[0].selectedBy).toEqual(playerId)
+        expect(pair[1].selectedBy).toEqual(playerId)
+
+        jest.runAllTimers()
+
+        expect(game.players.find(player => player.id === playerId).selectedCards).toHaveLength(0)
+        expect(pair[0].selectedBy).toBeFalsy()
+        expect(pair[1].selectedBy).toBeFalsy()
       })
     })
 
@@ -338,9 +363,27 @@ describe('Memory game', () => {
         })
       })
 
-      test('should clear selection of the current player', () => {
-        expect(game.players.find(player => player.id === playerId).selectedCards)
-          .toHaveLength(0)
+      test('should emit selectionClearedAfterMatchFailed event after a delay', () => {
+        expect(emit).not.toBeCalledWith('selectionClearedAfterMatchFailed', expect.anything())
+
+        jest.runAllTimers()
+
+        expect(emit).toBeCalledWith('selectionClearedAfterMatchFailed', {
+          playerId,
+          cardIds: [pair[0].id, otherCard.id],
+        })
+      })
+
+      test('should clear selection of the current player after a delay', () => {
+        expect(game.players.find(player => player.id === playerId).selectedCards).toHaveLength(2)
+        expect(pair[0].selectedBy).toEqual(playerId)
+        expect(otherCard.selectedBy).toEqual(playerId)
+
+        jest.runAllTimers()
+
+        expect(game.players.find(player => player.id === playerId).selectedCards).toHaveLength(0)
+        expect(pair[0].selectedBy).toBeFalsy()
+        expect(otherCard.selectedBy).toBeFalsy()
       })
     })
   })

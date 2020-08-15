@@ -4,20 +4,23 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node src/app.js",
+    "start": "nodemon src/app.js | pino-pretty",
     "test": "jest --watch --verbose"
   },
   "author": "hectorhon",
   "license": "UNLICENSED",
   "devDependencies": {
     "jest": "^26.2.2",
+    "nodemon": "^2.0.4",
     "pino-pretty": "^4.1.0",
     "typescript": "^3.9.7",
     "typescript-language-server": "^0.4.0"
   },
   "dependencies": {
+    "@koa/router": "^9.4.0",
     "koa": "^2.13.0",
     "pino": "^6.5.0",
+    "socket.io": "^2.3.0",
     "uuid": "^8.3.0"
   }
 }

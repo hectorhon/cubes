@@ -79,7 +79,12 @@ class Game extends EventEmitter {
     const card = this.cards.find(card => card.id === cardId)
     const player = this.players.find(player => player.id === playerId)
 
-    if (card.selectedBy === null || card.selectedBy === undefined) {
+    if (card.isMatched) {
+      this.emit('playerSelectCardFailed', {
+        playerId,
+        cardId,
+      })
+    } else if (card.selectedBy === null || card.selectedBy === undefined) {
       card.selectedBy = playerId
       player.selectedCards.push(card.id)
       this.emit('playerSelectedCard', {
@@ -100,11 +105,6 @@ class Game extends EventEmitter {
         playerId,
         cardId,
       })
-    } else if (card.isMatched) {
-      this.emit('playerSelectCardFailed', {
-        playerId,
-        cardId,
-      })
     }
 
     this.checkForMatches(playerId)
@@ -117,21 +117,37 @@ class Game extends EventEmitter {
     } else if (player.selectedCards.length === 2) {
       const [card1, card2] = player.selectedCards
         .map(cardId => this.cards.find(card => card.id === cardId))
-      card1.isMatched = true
-      card2.isMatched = true
       if (card1.value === card2.value) {
+        card1.isMatched = true
+        card2.isMatched = true
         this.emit('matchFound', {
           playerId,
           cardIds: [card1.id, card2.id],
           cardValue: card1.value,
         })
-        player.selectedCards.length = 0
+        setTimeout(() => {
+          player.selectedCards.length = 0
+          card1.selectedBy = null
+          card2.selectedBy = null
+          this.emit('selectionClearedAfterMatchFound', {
+            playerId,
+            cardIds: [card1.id, card2.id],
+          })
+        }, 1000)
       } else {
         this.emit('matchFailed', {
           playerId,
           cardIds: [card1.id, card2.id],
         })
-        player.selectedCards.length = 0
+        setTimeout(() => {
+          player.selectedCards.length = 0
+          card1.selectedBy = null
+          card2.selectedBy = null
+          this.emit('selectionClearedAfterMatchFailed', {
+            playerId,
+            cardIds: [card1.id, card2.id],
+          })
+        }, 1000)
       }
     } else {
       throw `Unexpected number of selected cards: ${player.selectedCards.length}`

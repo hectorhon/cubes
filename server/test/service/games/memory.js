@@ -32,30 +32,39 @@ describe('Memory game service', () => {
         clientId1 = uuid.v4()
         fakeSocket1 = {
           emit: jest.fn(),
+          on: jest.fn(),
         }
         clientId2 = uuid.v4()
         fakeSocket2 = {
           emit: jest.fn(),
+          on: jest.fn(),
         }
+      })
+
+      test('should call game.addPlayer', () => {
+        const gameAddPlayer = jest.spyOn(_game, 'addPlayer')
+        MemoryGameService.setupClient(clientId1, fakeSocket1, gameId)
+        expect(gameAddPlayer).toHaveBeenCalledTimes(1)
+        expect(gameAddPlayer).toBeCalledWith(clientId1)
+        gameAddPlayer.mockRestore()
       })
 
       test('should forward playerJoined event', () => {
         MemoryGameService.setupClient(clientId1, fakeSocket1, gameId)
         const playerId1 = _game.players[0].id
-        expect(fakeSocket1.emit).toBeCalledWith('selfJoined', {
-          playerId: playerId1,
-        })
+        expect(fakeSocket1.emit.mock.calls[0][0]).toEqual('selfJoined')
+        expect(fakeSocket1.emit.mock.calls[0][1]).toHaveProperty('playerId', playerId1)
+        expect(fakeSocket1.emit.mock.calls[0][1]).toHaveProperty('gameState')
 
         fakeSocket1.emit.mockClear()
 
         MemoryGameService.setupClient(clientId2, fakeSocket2, gameId)
         const playerId2 = _game.players[1].id
-        expect(fakeSocket1.emit).toBeCalledWith('playerJoined', {
-          playerId: playerId2,
-        })
-        expect(fakeSocket2.emit).toBeCalledWith('selfJoined', {
-          playerId: playerId2,
-        })
+        expect(fakeSocket1.emit.mock.calls[0][0]).toEqual('playerJoined')
+        expect(fakeSocket1.emit.mock.calls[0][1]).toHaveProperty('playerId', playerId2)
+        expect(fakeSocket2.emit.mock.calls[0][0]).toEqual('selfJoined')
+        expect(fakeSocket2.emit.mock.calls[0][1]).toHaveProperty('playerId', playerId2)
+        expect(fakeSocket2.emit.mock.calls[0][1]).toHaveProperty('gameState')
       })
 
       test('should forward playerSelectedCard event', () => {
@@ -155,6 +164,50 @@ describe('Memory game service', () => {
           playerId: playerId1,
           cardIds: [cardId1, cardId2],
         })
+      })
+
+      test.todo('should forward selectionClearedAfterMatchFound event')
+
+      test.todo('should forward selectionClearedAfterMatchFailed event')
+    })
+
+    describe('client event handling', () => {
+      let gameId, _game, clientId1, fakeSocket1, playerId1, gameClickCard
+
+      beforeEach(() => {
+        const numPairs = 5
+        gameId = MemoryGameService.createGame(numPairs)
+        _game = MemoryGameService._findGameById(gameId)
+        gameClickCard = jest.spyOn(_game, 'clickCard')
+
+        clientId1 = uuid.v4()
+        const fakeSocket1Handlers = {}
+        fakeSocket1 = {
+          emit: jest.fn().mockImplementation((eventName, ...args) => {
+            if (!fakeSocket1Handlers[eventName]) {
+              return
+            }
+            fakeSocket1Handlers[eventName].forEach(handler => {
+              handler(...args)
+            })
+          }),
+          on: jest.fn().mockImplementation((eventName, handler) => {
+            if (!fakeSocket1Handlers[eventName]) {
+              fakeSocket1Handlers[eventName] = [handler]
+            } else {
+              fakeSocket1Handlers[eventName].push(handler)
+            }
+          }),
+        }
+        fakeSocket1.on('selfJoined', ({ playerId }) => {
+          playerId1 = playerId
+        })
+      })
+
+      it('should forward card click event', () => {
+        MemoryGameService.setupClient(clientId1, fakeSocket1, gameId)
+        fakeSocket1.emit('cardClick', _game.cards[0].id)
+        expect(gameClickCard).toHaveBeenCalledWith(playerId1, _game.cards[0].id)
       })
     })
   })

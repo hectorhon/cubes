@@ -1,0 +1,27 @@
+.memory-game-play-area-div {
+    width: 640px;
+    height: 480px;
+    background-color: black;
+}
+
+.memory-game-play-area-cards-div {
+    padding: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 40px);
+    grid-gap: 20px;
+}
+
+.memory-game-card {
+    background-color: purple;
+    width: 40px;
+    height: 60px;
+    border: 10px solid black;
+}
+
+.memory-game-card-self-selected {
+    border: 10px solid blue;
+}
+
+.memory-game-card-matched {
+    background-color: blue;
+}
